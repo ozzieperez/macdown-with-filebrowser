@@ -15,6 +15,10 @@
 @property (nonatomic, readonly) MPPreferences *preferences;
 @property (readonly) BOOL previewVisible;
 @property (readonly) BOOL editorVisible;
+@property (readonly) BOOL fileBrowserVisible;
+
+- (IBAction)toggleFileBrowser:(id)sender;
+- (IBAction)openFolderInBrowser:(id)sender;
 
 @property (nonatomic, readwrite) NSString *markdown;
 @property (nonatomic, readonly) NSString *html;

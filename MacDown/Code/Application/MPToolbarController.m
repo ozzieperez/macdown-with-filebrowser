@@ -53,6 +53,10 @@ static CGFloat itemWidth = 37;
     
     // Set up all available toolbar items
     self->toolbarItems = @[
+        [self toolbarItemWithIdentifier:@"toggle-sidebar"
+            label:NSLocalizedString(@"Sidebar", @"Toggle sidebar toolbar button")
+            icon:@"NSListViewTemplate"
+            action:@selector(toggleFileBrowser:)],
         [self toolbarItemGroupWithIdentifier:@"indent-group" separated:YES label:NSLocalizedString(@"Shift Left/Right", @"") items:@[
             [self toolbarItemWithIdentifier:@"shift-left" label:NSLocalizedString(@"Shift Left", @"Shift text to the left toolbar button") icon:@"ToolbarIconShiftLeft" action:@selector(unindent:)],
             [self toolbarItemWithIdentifier:@"shift-right" label:NSLocalizedString(@"Shift Right", @"Shift text to the right toolbar button") icon:@"ToolbarIconShiftRight" action:@selector(indent:)]

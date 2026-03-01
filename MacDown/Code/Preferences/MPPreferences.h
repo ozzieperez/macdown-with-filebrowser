@@ -55,6 +55,11 @@ extern NSString * const MPDidDetectFreshInstallationNotification;
 @property (assign) BOOL editorEnsuresNewlineAtEndOfFile;
 @property (assign) NSInteger editorUnorderedListMarkerType;
 
+// File browser
+@property (assign) BOOL fileBrowserVisible;
+@property (assign) NSString *fileBrowserRootPath;
+@property (assign) CGFloat fileBrowserWidth;
+
 @property (assign) BOOL previewZoomRelativeToBaseFontSize;
 
 @property (assign) NSString *htmlTemplateName;

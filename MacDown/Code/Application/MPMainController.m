@@ -121,6 +121,66 @@ NS_INLINE void treat()
         setEventHandler:self
             andSelector:@selector(openUrlSchemeAppleEvent:withReplyEvent:)
           forEventClass:kInternetEventClass andEventID:kAEGetURL];
+
+    // Add File Browser menu items
+    [self addFileBrowserMenuItems];
+}
+
+- (void)addFileBrowserMenuItems
+{
+    NSMenu *mainMenu = [NSApp mainMenu];
+
+    // Add to View menu
+    for (NSMenuItem *item in mainMenu.itemArray)
+    {
+        if ([item.title isEqualToString:@"View"] && item.submenu)
+        {
+            NSMenu *viewMenu = item.submenu;
+            [viewMenu addItem:[NSMenuItem separatorItem]];
+
+            NSMenuItem *toggleBrowser = [[NSMenuItem alloc]
+                initWithTitle:NSLocalizedString(@"Toggle File Browser",
+                    @"Menu item to toggle file browser")
+                       action:@selector(toggleFileBrowser:)
+                keyEquivalent:@"b"];
+            toggleBrowser.keyEquivalentModifierMask =
+                NSEventModifierFlagCommand | NSEventModifierFlagShift;
+            [viewMenu addItem:toggleBrowser];
+            break;
+        }
+    }
+
+    // Add to File menu
+    for (NSMenuItem *item in mainMenu.itemArray)
+    {
+        if ([item.title isEqualToString:@"File"] && item.submenu)
+        {
+            NSMenu *fileMenu = item.submenu;
+
+            NSInteger openIndex = -1;
+            for (NSInteger i = 0; i < fileMenu.numberOfItems; i++)
+            {
+                NSString *title = [fileMenu itemAtIndex:i].title;
+                if ([title hasPrefix:@"Open"])
+                {
+                    openIndex = i;
+                    break;
+                }
+            }
+            if (openIndex < 0)
+                openIndex = 1;
+
+            NSMenuItem *openFolder = [[NSMenuItem alloc]
+                initWithTitle:NSLocalizedString(@"Open Folder\u2026",
+                    @"Menu item to open folder in browser")
+                       action:@selector(openFolderInBrowser:)
+                keyEquivalent:@"o"];
+            openFolder.keyEquivalentModifierMask =
+                NSEventModifierFlagCommand | NSEventModifierFlagShift;
+            [fileMenu insertItem:openFolder atIndex:openIndex + 1];
+            break;
+        }
+    }
 }
 
 // Open a file from a browser with url of the form :

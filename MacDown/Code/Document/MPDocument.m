@@ -30,6 +30,7 @@
 #import "MPMathJaxListener.h"
 #import "WebView+WebViewPrivateHeaders.h"
 #import "MPToolbarController.h"
+#import "MPFileBrowserController.h"
 #import <JavaScriptCore/JavaScriptCore.h>
 
 static NSString * const kMPDefaultAutosaveName = @"Untitled";
@@ -219,6 +220,12 @@ typedef NS_ENUM(NSUInteger, MPWordCountType) {
 // Store file content in initializer until nib is loaded.
 @property (copy) NSString *loadedString;
 
+// File browser sidebar
+@property (nonatomic, strong) NSSplitView *outerSplitView;
+@property (nonatomic, strong) NSView *fileBrowserContainer;
+@property (nonatomic, strong) MPFileBrowserController *fileBrowserController;
+@property (nonatomic) CGFloat previousFileBrowserWidth;
+
 - (void)scaleWebview;
 - (void)syncScrollers;
 -(void) updateHeaderLocations;
@@ -359,6 +366,14 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 - (void)windowControllerDidLoadNib:(NSWindowController *)controller
 {
     [super windowControllerDidLoadNib:controller];
+
+    // Enable tabbed windows
+    if (@available(macOS 10.12, *)) {
+        controller.window.tabbingMode = NSWindowTabbingModePreferred;
+    }
+
+    // Set up the file browser sidebar
+    [self setupFileBrowser];
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
@@ -692,8 +707,29 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (void)splitViewDidResizeSubviews:(NSNotification *)notification
 {
+    NSSplitView *splitView = notification.object;
+
+    // Handle outer split (file browser) resize
+    if (splitView == self.outerSplitView)
+    {
+        CGFloat browserWidth = self.fileBrowserContainer.frame.size.width;
+        if (browserWidth > 0)
+            self.preferences.fileBrowserWidth = browserWidth;
+        return;
+    }
+
+    // Existing inner split view handling
     [self redrawDivider];
     self.editor.editable = self.editorVisible;
+}
+
+- (CGFloat)splitView:(NSSplitView *)splitView
+    constrainMinCoordinate:(CGFloat)proposedMinimumPosition
+             ofSubviewAt:(NSInteger)dividerIndex
+{
+    if (splitView == self.outerSplitView)
+        return 120; // Minimum sidebar width
+    return proposedMinimumPosition;
 }
 
 
@@ -1488,8 +1524,131 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     [self.renderer parseAndRenderLater];
 }
 
+- (IBAction)toggleFileBrowser:(id)sender
+{
+    if (!self.outerSplitView)
+        return;
+
+    BOOL isVisible = self.fileBrowserContainer.frame.size.width > 0;
+
+    if (isVisible)
+    {
+        self.previousFileBrowserWidth = self.fileBrowserContainer.frame.size.width;
+        [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+            context.duration = 0.2;
+            [self.outerSplitView.animator setPosition:0 ofDividerAtIndex:0];
+        }];
+        self.preferences.fileBrowserVisible = NO;
+    }
+    else
+    {
+        CGFloat width = self.previousFileBrowserWidth > 0 ? self.previousFileBrowserWidth : 220;
+        [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+            context.duration = 0.2;
+            [self.outerSplitView.animator setPosition:width ofDividerAtIndex:0];
+        }];
+        self.preferences.fileBrowserVisible = YES;
+    }
+}
+
+- (IBAction)openFolderInBrowser:(id)sender
+{
+    if (self.fileBrowserContainer.frame.size.width == 0)
+    {
+        [self toggleFileBrowser:nil];
+    }
+    [self.fileBrowserController openFolder:sender];
+}
+
+- (BOOL)fileBrowserVisible
+{
+    return self.fileBrowserContainer.frame.size.width > 0;
+}
+
 
 #pragma mark - Private
+
+- (void)setupFileBrowser
+{
+    // Create the file browser controller
+    self.fileBrowserController = [[MPFileBrowserController alloc] init];
+    [self.fileBrowserController loadView];
+
+    NSView *browserView = self.fileBrowserController.view;
+    browserView.translatesAutoresizingMaskIntoConstraints = NO;
+
+    // Get the existing split view and its superview (the window's content view)
+    NSView *contentView = self.splitView.superview;
+    NSView *existingSplitView = self.splitView;
+
+    // Create the outer split view
+    NSSplitView *outerSplit = [[NSSplitView alloc] initWithFrame:contentView.bounds];
+    outerSplit.vertical = YES;
+    outerSplit.dividerStyle = NSSplitViewDividerStyleThin;
+    outerSplit.translatesAutoresizingMaskIntoConstraints = NO;
+    outerSplit.autosaveName = @"MPFileBrowserSplit";
+    outerSplit.delegate = self;
+    self.outerSplitView = outerSplit;
+
+    // Create the sidebar container
+    NSView *sidebarContainer = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 220, 500)];
+    self.fileBrowserContainer = sidebarContainer;
+
+    // Add browser view to container
+    [sidebarContainer addSubview:browserView];
+    [NSLayoutConstraint activateConstraints:@[
+        [browserView.topAnchor constraintEqualToAnchor:sidebarContainer.topAnchor],
+        [browserView.leadingAnchor constraintEqualToAnchor:sidebarContainer.leadingAnchor],
+        [browserView.trailingAnchor constraintEqualToAnchor:sidebarContainer.trailingAnchor],
+        [browserView.bottomAnchor constraintEqualToAnchor:sidebarContainer.bottomAnchor],
+    ]];
+
+    // Remove existing split view from content view
+    [existingSplitView removeFromSuperview];
+
+    // Remove existing constraints that referenced the old split view
+    for (NSLayoutConstraint *constraint in [contentView.constraints copy])
+    {
+        if (constraint.firstItem == existingSplitView || constraint.secondItem == existingSplitView)
+            [contentView removeConstraint:constraint];
+    }
+
+    // Add sidebar and existing split to the outer split
+    [outerSplit addSubview:sidebarContainer];
+    [outerSplit addSubview:existingSplitView];
+
+    // Add outer split to content view
+    [contentView addSubview:outerSplit];
+    [NSLayoutConstraint activateConstraints:@[
+        [outerSplit.topAnchor constraintEqualToAnchor:contentView.topAnchor],
+        [outerSplit.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor],
+        [outerSplit.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor],
+        [outerSplit.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor],
+    ]];
+
+    // Set holding priorities — sidebar should collapse, not the editor
+    [outerSplit setHoldingPriority:200 forSubviewAtIndex:0];
+    [outerSplit setHoldingPriority:260 forSubviewAtIndex:1];
+
+    // Set initial sidebar width
+    MPPreferences *prefs = self.preferences;
+    CGFloat sidebarWidth = prefs.fileBrowserWidth > 0 ? prefs.fileBrowserWidth : 220;
+    [outerSplit setPosition:sidebarWidth ofDividerAtIndex:0];
+
+    // Restore root URL from preferences
+    NSString *rootPath = prefs.fileBrowserRootPath;
+    if (rootPath && [[NSFileManager defaultManager] fileExistsAtPath:rootPath])
+    {
+        self.fileBrowserController.rootURL = [NSURL fileURLWithPath:rootPath];
+    }
+
+    // Handle visibility preference
+    if (!prefs.fileBrowserVisible)
+    {
+        self.previousFileBrowserWidth = sidebarWidth;
+        [outerSplit setPosition:0 ofDividerAtIndex:0];
+    }
+}
 
 - (void)toggleSplitterCollapsingEditorPane:(BOOL)forEditorPane
 {
