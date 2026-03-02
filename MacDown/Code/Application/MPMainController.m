@@ -142,7 +142,7 @@ NS_INLINE void treat()
                 initWithTitle:NSLocalizedString(@"Toggle File Browser",
                     @"Menu item to toggle file browser")
                        action:@selector(toggleFileBrowser:)
-                keyEquivalent:@"b"];
+                keyEquivalent:@"l"];
             toggleBrowser.keyEquivalentModifierMask =
                 NSEventModifierFlagCommand | NSEventModifierFlagShift;
             [viewMenu addItem:toggleBrowser];
@@ -174,7 +174,7 @@ NS_INLINE void treat()
                 initWithTitle:NSLocalizedString(@"Open Folder\u2026",
                     @"Menu item to open folder in browser")
                        action:@selector(openFolderInBrowser:)
-                keyEquivalent:@"o"];
+                keyEquivalent:@"d"];
             openFolder.keyEquivalentModifierMask =
                 NSEventModifierFlagCommand | NSEventModifierFlagShift;
             [fileMenu insertItem:openFolder atIndex:openIndex + 1];
