@@ -11,13 +11,7 @@ Visit the [project site](http://macdown.uranusjr.com/) for more information, or 
 
 ## Install
 
-[Download](http://macdown.uranusjr.com/download/latest/), unzip, and drag the app to Applications folder. MacDown is also available through [Homebrew Cask](https://caskroom.github.io/):
-
-    brew install --cask macdown
-
-## Screenshot
-
-![screenshot](assets/screenshot.png)
+Build it on your Mac and copy the app from the Debug folder to your /Applications folder. There's an issue with the Release folder. 
 
 ## File Browser Sidebar
 
