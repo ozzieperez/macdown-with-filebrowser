@@ -282,21 +282,10 @@ static void MPFSEventsCallback(
 
 - (void)openFileAtURL:(NSURL *)url
 {
-    NSDocumentController *dc = [NSDocumentController sharedDocumentController];
-
-    NSDocument *existing = [dc documentForURL:url];
-    if (existing)
+    if (self.delegate)
     {
-        [existing showWindows];
-        return;
+        [self.delegate fileBrowser:self didRequestOpenURL:url];
     }
-
-    [dc openDocumentWithContentsOfURL:url
-                              display:YES
-                    completionHandler:^(NSDocument *doc, BOOL wasOpen, NSError *err) {
-        if (err)
-            NSLog(@"Failed to open %@: %@", url, err);
-    }];
 }
 
 - (void)createNewFileInDirectory:(NSURL *)directoryURL

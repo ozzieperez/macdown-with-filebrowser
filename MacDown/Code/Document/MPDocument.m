@@ -176,7 +176,7 @@ NS_INLINE NSColor *MPGetWebViewBackgroundColor(WebView *webview)
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101100
      WebEditingDelegate, WebFrameLoadDelegate, WebPolicyDelegate, WebResourceLoadDelegate,
 #endif
-     MPAutosaving, MPRendererDataSource, MPRendererDelegate>
+     MPAutosaving, MPRendererDataSource, MPRendererDelegate, MPFileBrowserDelegate>
 
 typedef NS_ENUM(NSUInteger, MPWordCountType) {
     MPWordCountTypeWord,
@@ -1572,6 +1572,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 {
     // Create the file browser controller
     self.fileBrowserController = [[MPFileBrowserController alloc] init];
+    self.fileBrowserController.delegate = self;
     [self.fileBrowserController loadView];
 
     NSView *browserView = self.fileBrowserController.view;
@@ -1648,6 +1649,71 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         self.previousFileBrowserWidth = sidebarWidth;
         [outerSplit setPosition:0 ofDividerAtIndex:0];
     }
+}
+
+
+#pragma mark - MPFileBrowserDelegate
+
+- (void)fileBrowser:(id)controller didRequestOpenURL:(NSURL *)url
+{
+    // If the current document has unsaved changes, prompt to save first
+    if (self.isDocumentEdited && self.fileURL)
+    {
+        [self saveDocumentWithDelegate:self
+                       didSaveSelector:@selector(document:didSave:contextInfo:)
+                           contextInfo:(__bridge_retained void *)url];
+        return;
+    }
+
+    [self loadFileFromURL:url];
+}
+
+- (void)document:(NSDocument *)document didSave:(BOOL)didSave
+     contextInfo:(void *)contextInfo
+{
+    NSURL *url = (__bridge_transfer NSURL *)contextInfo;
+    if (didSave || !self.isDocumentEdited)
+    {
+        [self loadFileFromURL:url];
+    }
+}
+
+- (void)loadFileFromURL:(NSURL *)url
+{
+    NSError *error = nil;
+    NSData *data = [NSData dataWithContentsOfURL:url options:0 error:&error];
+    if (!data)
+    {
+        NSLog(@"Failed to read file %@: %@", url, error);
+        return;
+    }
+
+    NSString *content = [[NSString alloc] initWithData:data
+                                              encoding:NSUTF8StringEncoding];
+    if (!content)
+    {
+        NSLog(@"Failed to decode file %@ as UTF-8", url);
+        return;
+    }
+
+    // Update the document's file URL so saves go to the new file
+    self.fileURL = url;
+    self.fileType = @"net.daringfireball.markdown";
+
+    // Load content into editor
+    self.editor.string = content;
+
+    // Update window title to reflect new file
+    NSString *autosaveName = url.absoluteString;
+    self.windowControllers.firstObject.window.frameAutosaveName = autosaveName;
+    self.autosaveName = autosaveName;
+
+    // Trigger re-render of preview and syntax highlighting
+    [self.renderer parseAndRenderNow];
+    [self.highlighter parseAndHighlightNow];
+
+    // Reset the modified state since we just loaded fresh content
+    [self updateChangeCount:NSChangeCleared];
 }
 
 - (void)toggleSplitterCollapsingEditorPane:(BOOL)forEditorPane
