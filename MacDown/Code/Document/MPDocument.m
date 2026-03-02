@@ -728,8 +728,16 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
              ofSubviewAt:(NSInteger)dividerIndex
 {
     if (splitView == self.outerSplitView)
-        return 120; // Minimum sidebar width
+        return 120; // Minimum sidebar width when dragging
     return proposedMinimumPosition;
+}
+
+- (BOOL)splitView:(NSSplitView *)splitView canCollapseSubview:(NSView *)subview
+{
+    // Allow the file browser sidebar to fully collapse
+    if (splitView == self.outerSplitView && subview == self.fileBrowserContainer)
+        return YES;
+    return NO;
 }
 
 
@@ -1529,14 +1537,17 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     if (!self.outerSplitView)
         return;
 
-    BOOL isVisible = self.fileBrowserContainer.frame.size.width > 0;
+    BOOL isCollapsed = [self.outerSplitView isSubviewCollapsed:self.fileBrowserContainer];
 
-    if (isVisible)
+    if (!isCollapsed)
     {
-        self.previousFileBrowserWidth = self.fileBrowserContainer.frame.size.width;
+        CGFloat currentWidth = self.fileBrowserContainer.frame.size.width;
+        if (currentWidth > 0)
+            self.previousFileBrowserWidth = currentWidth;
         [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
             context.duration = 0.2;
-            [self.outerSplitView.animator setPosition:0 ofDividerAtIndex:0];
+            context.allowsImplicitAnimation = YES;
+            [self.outerSplitView setPosition:0 ofDividerAtIndex:0];
         }];
         self.preferences.fileBrowserVisible = NO;
     }
@@ -1545,7 +1556,8 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         CGFloat width = self.previousFileBrowserWidth > 0 ? self.previousFileBrowserWidth : 220;
         [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
             context.duration = 0.2;
-            [self.outerSplitView.animator setPosition:width ofDividerAtIndex:0];
+            context.allowsImplicitAnimation = YES;
+            [self.outerSplitView setPosition:width ofDividerAtIndex:0];
         }];
         self.preferences.fileBrowserVisible = YES;
     }
@@ -1562,7 +1574,9 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (BOOL)fileBrowserVisible
 {
-    return self.fileBrowserContainer.frame.size.width > 0;
+    if (!self.outerSplitView)
+        return NO;
+    return ![self.outerSplitView isSubviewCollapsed:self.fileBrowserContainer];
 }
 
 
