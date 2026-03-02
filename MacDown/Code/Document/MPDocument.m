@@ -699,6 +699,11 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         NSLocalizedString(@"Restore Editor Pane",
                           @"Toggle editor pane menu item");
     }
+    else if (action == @selector(toggleFileBrowser:)
+             || action == @selector(openFolderInBrowser:))
+    {
+        return YES;
+    }
     return result;
 }
 
