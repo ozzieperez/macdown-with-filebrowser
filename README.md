@@ -19,6 +19,29 @@ Visit the [project site](http://macdown.uranusjr.com/) for more information, or 
 
 ![screenshot](assets/screenshot.png)
 
+## File Browser Sidebar
+
+This fork adds a collapsible file browser sidebar for navigating and managing markdown files within a folder.
+
+### Features
+
+* Browse a folder tree showing markdown files and subdirectories
+* Click a file to open it in the current editor and preview panes
+* Create new markdown files via right-click context menu
+* Delete files (moved to Trash) via context menu
+* Reveal files in Finder from the context menu
+* Automatic refresh when files change on disk (via FSEvents)
+* Sidebar state and width are persisted across sessions
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> | Toggle file browser sidebar |
+| <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> | Open folder in file browser |
+
+These are also available from the **View** and **File** menus, and via the **Sidebar** toolbar button.
+
 ## License
 
 MacDown is released under the terms of MIT License. You may find the content of the license [here](http://opensource.org/licenses/MIT), or inside the `LICENSE` directory.
