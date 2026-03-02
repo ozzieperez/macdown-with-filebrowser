@@ -100,6 +100,15 @@ static void MPFSEventsCallback(
     [toolbar addSubview:label];
     self.pathLabel = label;
 
+    NSButton *collapseBtn = [NSButton buttonWithImage:[NSImage imageNamed:NSImageNameLeftFacingTriangleTemplate]
+                                               target:nil
+                                               action:@selector(toggleFileBrowser:)];
+    collapseBtn.bezelStyle = NSBezelStyleInline;
+    collapseBtn.bordered = NO;
+    collapseBtn.toolTip = @"Hide Sidebar";
+    collapseBtn.translatesAutoresizingMaskIntoConstraints = NO;
+    [toolbar addSubview:collapseBtn];
+
     [NSLayoutConstraint activateConstraints:@[
         [toolbar.topAnchor constraintEqualToAnchor:self.view.topAnchor],
         [toolbar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
@@ -117,8 +126,13 @@ static void MPFSEventsCallback(
         [newBtn.heightAnchor constraintEqualToConstant:24],
 
         [label.leadingAnchor constraintEqualToAnchor:newBtn.trailingAnchor constant:4],
-        [label.trailingAnchor constraintEqualToAnchor:toolbar.trailingAnchor constant:-4],
+        [label.trailingAnchor constraintEqualToAnchor:collapseBtn.leadingAnchor constant:-4],
         [label.centerYAnchor constraintEqualToAnchor:toolbar.centerYAnchor],
+
+        [collapseBtn.trailingAnchor constraintEqualToAnchor:toolbar.trailingAnchor constant:-4],
+        [collapseBtn.centerYAnchor constraintEqualToAnchor:toolbar.centerYAnchor],
+        [collapseBtn.widthAnchor constraintEqualToConstant:24],
+        [collapseBtn.heightAnchor constraintEqualToConstant:24],
     ]];
 }
 
