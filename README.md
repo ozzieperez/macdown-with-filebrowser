@@ -11,7 +11,7 @@ Visit the [project site](http://macdown.uranusjr.com/) for more information, or 
 
 ## Install
 
-Build it on your Mac and copy the app from the Debug folder to your /Applications folder. There's an issue with the Release folder. 
+Build it on your Mac and copy the app from the Debug folder to your /Applications folder. (There's an issue with the Release folder.) 
 
 ## File Browser Sidebar
 
