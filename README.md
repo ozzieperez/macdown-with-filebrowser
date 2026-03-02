@@ -9,6 +9,10 @@ MacDown is an open source Markdown editor for OS X, released under the MIT Licen
 
 Visit the [project site](http://macdown.uranusjr.com/) for more information, or download [MacDown.app.zip](http://macdown.uranusjr.com/download/latest/) directly from the [latest releases](https://github.com/MacDownApp/macdown/releases/latest) page.
 
+## Screenhot
+
+![screenshot](assets/screenshot.jpeg)
+
 ## Install
 
 Build it on your Mac and copy the app from the Debug folder to your /Applications folder. (There's an issue with the Release folder.) 
